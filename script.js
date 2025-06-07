@@ -1,3 +1,5 @@
+import * as THREE from 'three';
+
 document.addEventListener('DOMContentLoaded', function() {
     // Define location/scene data
     const locations = [
