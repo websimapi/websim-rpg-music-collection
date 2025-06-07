@@ -350,3 +350,80 @@ audio {
         transform: translate(-50%, -50%) scale(1);
     }
 }
+
+.scene-controls {
+    margin-bottom: 1rem;
+    display: flex;
+    gap: 10px;
+}
+
+.panoramic-button {
+    background: linear-gradient(45deg, #4a90e2, #357abd);
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(74, 144, 226, 0.3);
+}
+
+.panoramic-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(74, 144, 226, 0.5);
+    background: linear-gradient(45deg, #357abd, #2c5f94);
+}
+
+.panoramic-viewer {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: #000;
+    z-index: 2000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.panoramic-viewer.hidden {
+    display: none;
+}
+
+#panoramic-container {
+    width: 100%;
+    height: 100%;
+    position: relative;
+}
+
+.close-panoramic {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    background-color: rgba(0, 0, 0, 0.7);
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    border-radius: 25px;
+    cursor: pointer;
+    font-size: 1rem;
+    z-index: 2001;
+    transition: background-color 0.3s ease;
+}
+
+.close-panoramic:hover {
+    background-color: rgba(0, 0, 0, 0.9);
+}
+
+#panoramic-loading {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: white;
+    font-size: 1.2rem;
+    z-index: 2001;
+    text-align: center;
+}

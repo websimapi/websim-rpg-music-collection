@@ -23,6 +23,9 @@
                 <div id="scene-overlay">
                     <h2 id="scene-title">Select a location</h2>
                     <p id="scene-description">Click on a location on the map to explore</p>
+                    <div class="scene-controls">
+                        <button id="panoramic-btn" class="panoramic-button" style="display: none;">🌐 View in Panoramic</button>
+                    </div>
                     <div class="audio-controls">
                         <audio id="scene-audio" loop></audio>
                     </div>
@@ -37,6 +40,19 @@
             </div>
         </div>
     </div>
+    <div id="panoramic-viewer" class="panoramic-viewer hidden">
+        <div id="panoramic-container"></div>
+        <button id="close-panoramic" class="close-panoramic">✕ Close Panoramic View</button>
+        <div id="panoramic-loading">Loading panoramic view...</div>
+    </div>
+    <script type="importmap">
+    {
+      "imports": {
+        "three": "https://unpkg.com/three@0.163.0/build/three.module.js",
+        "three/addons/": "https://unpkg.com/three@0.163.0/examples/jsm/"
+      }
+    }
+    </script>
     <script src="script.js"></script>
 <script defer src="https://static.cloudflareinsights.com/beacon.min.js/v8c78df7c7c0f484497ecbca7046644da1771523124516" integrity="sha512-8DS7rgIrAmghBFwoOTujcf6D9rXvH8xm8JQ1Ja01h9QX8EzXldiszufYa4IFfKdLUKTTrnSFXLDkUEOTrZQ8Qg==" data-cf-beacon='{"version":"2024.11.0","token":"4c6229722a6346bc8eb5cb0e5eae5d41","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
 </body>

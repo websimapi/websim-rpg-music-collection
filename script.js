@@ -91,6 +91,11 @@ document.addEventListener('DOMContentLoaded', function() {
     const sceneAudio = document.getElementById('scene-audio');
     const globalAudioToggle = document.getElementById('global-audio-toggle');
     const locationGrid = document.getElementById('location-grid');
+    const panoramicBtn = document.getElementById('panoramic-btn');
+    const panoramicViewer = document.getElementById('panoramic-viewer');
+    const panoramicContainer = document.getElementById('panoramic-container');
+    const closePanoramicBtn = document.getElementById('close-panoramic');
+    const panoramicLoading = document.getElementById('panoramic-loading');
 
     let currentAudio = null;
     let isPlaying = false;
@@ -98,6 +103,13 @@ document.addEventListener('DOMContentLoaded', function() {
     let hasUserInteracted = false;
     let isTraveling = false;
     let currentLocation = null;
+
+    // Panoramic viewer variables
+    let panoramicScene, panoramicCamera, panoramicRenderer;
+    let panoramicGeometry, panoramicMaterial, panoramicMesh;
+    let isMouseDown = false;
+    let mouseX = 0, mouseY = 0;
+    let phi = 0, theta = 0;
 
     // Create the world map with pins
     function createWorldMap() {
@@ -276,87 +288,172 @@ document.addEventListener('DOMContentLoaded', function() {
         mapContainer.appendChild(pathContainer);
     }
     
-    // Extract scene update logic
-    function updateScene(location) {
-        currentLocation = location;
+    // Initialize panoramic viewer
+    function initPanoramicViewer() {
+        panoramicScene = new THREE.Scene();
+        panoramicCamera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        panoramicRenderer = new THREE.WebGLRenderer();
+        panoramicRenderer.setSize(window.innerWidth, window.innerHeight);
         
-        // Update active location highlights
-        document.querySelectorAll('.location-card').forEach(card => card.classList.remove('active'));
-        document.querySelector(`.location-card[data-location-id="${location.id}"]`).classList.add('active');
-
-        document.querySelectorAll('.map-pin').forEach(pin => pin.classList.remove('active'));
-        document.querySelector(`.map-pin[data-location-id="${location.id}"]`).classList.add('active');
-
-        // Update scene content
-        sceneImage.style.backgroundImage = `url(${location.image})`;
-        sceneTitle.textContent = location.name;
-        sceneDescription.textContent = location.description;
-
-        // Update audio source
-        sceneAudio.src = location.music;
-        sceneAudio.load();
-        currentAudio = location.music;
+        // Create sphere geometry for panoramic image
+        panoramicGeometry = new THREE.SphereGeometry(500, 60, 40);
+        // Flip the geometry inside out
+        panoramicGeometry.scale(-1, 1, 1);
+        
+        panoramicContainer.appendChild(panoramicRenderer.domElement);
+        
+        // Mouse controls
+        panoramicContainer.addEventListener('mousedown', onPanoramicMouseDown);
+        panoramicContainer.addEventListener('mousemove', onPanoramicMouseMove);
+        panoramicContainer.addEventListener('mouseup', onPanoramicMouseUp);
+        panoramicContainer.addEventListener('wheel', onPanoramicWheel);
+        
+        // Touch controls for mobile
+        panoramicContainer.addEventListener('touchstart', onPanoramicTouchStart);
+        panoramicContainer.addEventListener('touchmove', onPanoramicTouchMove);
+        panoramicContainer.addEventListener('touchend', onPanoramicTouchEnd);
+        
+        // Handle window resize
+        window.addEventListener('resize', onPanoramicResize);
     }
-    
-    // Audio fade functions
-    function fadeOutAudio(audio, duration) {
-        return new Promise((resolve) => {
-            const startVolume = audio.volume;
-            const step = startVolume / (duration / 50);
+
+    // Load panoramic image
+    function loadPanoramicImage(imagePath) {
+        panoramicLoading.style.display = 'block';
+        
+        const loader = new THREE.TextureLoader();
+        loader.load(imagePath, function(texture) {
+            panoramicLoading.style.display = 'none';
             
-            const fadeOut = setInterval(() => {
-                if (audio.volume > 0.05) {
-                    audio.volume = Math.max(0, audio.volume - step);
-                } else {
-                    audio.volume = 0;
-                    audio.pause();
-                    clearInterval(fadeOut);
-                    resolve();
-                }
-            }, 50);
+            if (panoramicMaterial) {
+                panoramicMaterial.dispose();
+            }
+            
+            panoramicMaterial = new THREE.MeshBasicMaterial({ map: texture });
+            
+            if (panoramicMesh) {
+                panoramicScene.remove(panoramicMesh);
+            }
+            
+            panoramicMesh = new THREE.Mesh(panoramicGeometry, panoramicMaterial);
+            panoramicScene.add(panoramicMesh);
+            
+            // Reset camera position
+            phi = 0;
+            theta = 0;
+            updatePanoramicCamera();
+            
+            animate();
+        }, undefined, function(error) {
+            panoramicLoading.textContent = 'Failed to load panoramic view';
+            console.error('Error loading panoramic texture:', error);
         });
     }
-    
-    function fadeInAudio(audio, duration) {
-        audio.volume = 0;
-        const targetVolume = 1;
-        const step = targetVolume / (duration / 50);
-        
-        const fadeIn = setInterval(() => {
-            if (audio.volume < targetVolume - 0.05) {
-                audio.volume = Math.min(targetVolume, audio.volume + step);
-            } else {
-                audio.volume = targetVolume;
-                clearInterval(fadeIn);
-            }
-        }, 50);
+
+    // Panoramic mouse controls
+    function onPanoramicMouseDown(event) {
+        isMouseDown = true;
+        mouseX = event.clientX;
+        mouseY = event.clientY;
     }
-    
-    // Enable audio after first user interaction
-    function enableAudio() {
-        if (!hasUserInteracted) {
-            hasUserInteracted = true;
-            audioEnabled = true;
-            globalAudioToggle.classList.remove('hidden');
-            // Auto-play current scene music if available
-            if (sceneAudio.src) {
-                sceneAudio.play().catch(e => console.log('Audio play failed:', e));
-            }
+
+    function onPanoramicMouseMove(event) {
+        if (!isMouseDown) return;
+        
+        const deltaX = event.clientX - mouseX;
+        const deltaY = event.clientY - mouseY;
+        
+        phi += deltaX * 0.01;
+        theta = Math.max(-Math.PI/2 + 0.1, Math.min(Math.PI/2 - 0.1, theta + deltaY * 0.01));
+        
+        updatePanoramicCamera();
+        
+        mouseX = event.clientX;
+        mouseY = event.clientY;
+    }
+
+    function onPanoramicMouseUp() {
+        isMouseDown = false;
+    }
+
+    function onPanoramicWheel(event) {
+        const fov = panoramicCamera.fov + event.deltaY * 0.05;
+        panoramicCamera.fov = Math.max(10, Math.min(120, fov));
+        panoramicCamera.updateProjectionMatrix();
+    }
+
+    // Touch controls
+    let touchStartX = 0, touchStartY = 0;
+
+    function onPanoramicTouchStart(event) {
+        if (event.touches.length === 1) {
+            touchStartX = event.touches[0].clientX;
+            touchStartY = event.touches[0].clientY;
         }
     }
 
-    // Toggle audio playback
-    globalAudioToggle.addEventListener('click', function() {
-        if (audioEnabled) {
-            sceneAudio.pause();
-            audioEnabled = false;
-            globalAudioToggle.textContent = '🔇';
-        } else {
-            audioEnabled = true;
-            globalAudioToggle.textContent = '🔊';
-            if (sceneAudio.src) {
-                sceneAudio.play().catch(e => console.log('Audio play failed:', e));
+    function onPanoramicTouchMove(event) {
+        if (event.touches.length === 1) {
+            const deltaX = event.touches[0].clientX - touchStartX;
+            const deltaY = event.touches[0].clientY - touchStartY;
+            
+            phi += deltaX * 0.01;
+            theta = Math.max(-Math.PI/2 + 0.1, Math.min(Math.PI/2 - 0.1, theta + deltaY * 0.01));
+            
+            updatePanoramicCamera();
+            
+            touchStartX = event.touches[0].clientX;
+            touchStartY = event.touches[0].clientY;
+        }
+        event.preventDefault();
+    }
+
+    function onPanoramicTouchEnd() {
+        // Touch ended
+    }
+
+    function updatePanoramicCamera() {
+        const x = Math.sin(phi) * Math.cos(theta);
+        const y = Math.sin(theta);
+        const z = Math.cos(phi) * Math.cos(theta);
+        
+        panoramicCamera.lookAt(x, y, z);
+    }
+
+    function onPanoramicResize() {
+        if (panoramicCamera && panoramicRenderer) {
+            panoramicCamera.aspect = window.innerWidth / window.innerHeight;
+            panoramicCamera.updateProjectionMatrix();
+            panoramicRenderer.setSize(window.innerWidth, window.innerHeight);
+        }
+    }
+
+    function animate() {
+        if (!panoramicViewer.classList.contains('hidden')) {
+            requestAnimationFrame(animate);
+            panoramicRenderer.render(panoramicScene, panoramicCamera);
+        }
+    }
+
+    // Event listeners for panoramic viewer
+    panoramicBtn.addEventListener('click', function() {
+        if (currentLocation) {
+            panoramicViewer.classList.remove('hidden');
+            if (!panoramicRenderer) {
+                initPanoramicViewer();
             }
+            loadPanoramicImage(currentLocation.image);
+        }
+    });
+
+    closePanoramicBtn.addEventListener('click', function() {
+        panoramicViewer.classList.add('hidden');
+    });
+
+    // Close panoramic with Escape key
+    document.addEventListener('keydown', function(event) {
+        if (event.key === 'Escape' && !panoramicViewer.classList.contains('hidden')) {
+            panoramicViewer.classList.add('hidden');
         }
     });
 
