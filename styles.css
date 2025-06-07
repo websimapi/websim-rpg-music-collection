@@ -190,8 +190,8 @@ audio {
 }
 
 .location-card.active {
-    border: 2px solid #f0a500;
-    box-shadow: 0 0 15px rgba(240, 165, 0, 0.5);
+    border: 2px solid #4a90e2;
+    box-shadow: 0 0 15px rgba(74, 144, 226, 0.5);
 }
 
 .location-thumbnail {
@@ -238,6 +238,8 @@ audio {
 .map-pin:hover, .map-pin.active {
     transform: translate(-50%, -50%) scale(1.3);
     box-shadow: 0 0 10px rgba(240, 165, 0, 0.8);
+    background-color: #4a90e2;
+    border-color: #87ceeb;
 }
 
 .map-pin::after {
