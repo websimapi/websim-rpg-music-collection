@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
 document.addEventListener('DOMContentLoaded', function() {
     // Define location/scene data
@@ -107,12 +108,8 @@ document.addEventListener('DOMContentLoaded', function() {
     let currentLocation = null;
 
     // Panoramic viewer variables
-    let panoramicScene, panoramicCamera, panoramicRenderer;
-    let panoramicGeometry, panoramicMaterial, panoramicMesh;
-    let isMouseDown = false;
-    let mouseX = 0, mouseY = 0;
-    let phi = 0, theta = 0;
-    let radius = 500;
+    let panoramicScene, panoramicCamera, panoramicRenderer, panoramicControls;
+    let panoramicSphere;
 
     // Create the world map with pins
     function createWorldMap() {
@@ -294,32 +291,32 @@ document.addEventListener('DOMContentLoaded', function() {
     // Initialize panoramic viewer
     function initPanoramicViewer() {
         panoramicScene = new THREE.Scene();
-        panoramicCamera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 1, 1100);
-        panoramicRenderer = new THREE.WebGLRenderer();
+        panoramicCamera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        panoramicCamera.position.set(0, 0, 0.1);
+        panoramicRenderer = new THREE.WebGLRenderer({ antialias: true });
         panoramicRenderer.setSize(window.innerWidth, window.innerHeight);
-        
-        // Create sphere geometry for panoramic image
-        panoramicGeometry = new THREE.SphereGeometry(radius, 60, 40);
-        // Flip the geometry inside out
-        panoramicGeometry.scale(-1, 1, 1);
+        panoramicRenderer.setPixelRatio(window.devicePixelRatio);
         
         panoramicContainer.appendChild(panoramicRenderer.domElement);
         
-        // Set initial camera position
-        phi = 0;
-        theta = 0;
-        updatePanoramicCamera();
+        // OrbitControls
+        panoramicControls = new OrbitControls(panoramicCamera, panoramicRenderer.domElement);
+        panoramicControls.enablePan = false;
+        panoramicControls.enableZoom = true;
+        panoramicControls.rotateSpeed = -0.3;
         
-        // Mouse controls
-        panoramicContainer.addEventListener('mousedown', onPanoramicMouseDown);
-        panoramicContainer.addEventListener('mousemove', onPanoramicMouseMove);
-        panoramicContainer.addEventListener('mouseup', onPanoramicMouseUp);
-        panoramicContainer.addEventListener('wheel', onPanoramicWheel);
+        // Constrain horizontal rotation to 200 degrees
+        const maxRotationAngle = (5 / 9) * Math.PI;
+        panoramicControls.minAzimuthAngle = -maxRotationAngle;
+        panoramicControls.maxAzimuthAngle = maxRotationAngle;
         
-        // Touch controls for mobile
-        panoramicContainer.addEventListener('touchstart', onPanoramicTouchStart);
-        panoramicContainer.addEventListener('touchmove', onPanoramicTouchMove);
-        panoramicContainer.addEventListener('touchend', onPanoramicTouchEnd);
+        // Optional: damping for smoother camera movement
+        panoramicControls.enableDamping = true;
+        panoramicControls.dampingFactor = 0.05;
+        
+        // Restrict vertical rotation
+        panoramicControls.minPolarAngle = (60 * Math.PI) / 180;
+        panoramicControls.maxPolarAngle = (110 * Math.PI) / 180;
         
         // Handle window resize
         window.addEventListener('resize', onPanoramicResize);
@@ -333,23 +330,19 @@ document.addEventListener('DOMContentLoaded', function() {
         loader.load(imagePath, function(texture) {
             panoramicLoading.style.display = 'none';
             
-            if (panoramicMaterial) {
-                panoramicMaterial.dispose();
+            // Ensure the texture is mapped correctly for a sphere
+            texture.mapping = THREE.EquirectangularReflectionMapping;
+            
+            if (panoramicSphere) {
+                panoramicScene.remove(panoramicSphere);
             }
             
-            panoramicMaterial = new THREE.MeshBasicMaterial({ map: texture });
+            const geometry = new THREE.SphereGeometry(50, 60, 40);
+            const material = new THREE.MeshBasicMaterial({ map: texture, side: THREE.BackSide });
             
-            if (panoramicMesh) {
-                panoramicScene.remove(panoramicMesh);
-            }
-            
-            panoramicMesh = new THREE.Mesh(panoramicGeometry, panoramicMaterial);
-            panoramicScene.add(panoramicMesh);
-            
-            // Reset camera position
-            phi = 0;
-            theta = 0;
-            updatePanoramicCamera();
+            panoramicSphere = new THREE.Mesh(geometry, material);
+            panoramicSphere.rotation.y = (2 / 4) * Math.PI;
+            panoramicScene.add(panoramicSphere);
             
             animate();
         }, undefined, function(error) {
@@ -358,77 +351,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Panoramic mouse controls
-    function onPanoramicMouseDown(event) {
-        isMouseDown = true;
-        mouseX = event.clientX;
-        mouseY = event.clientY;
-    }
-
-    function onPanoramicMouseMove(event) {
-        if (!isMouseDown) return;
-        
-        const deltaX = event.clientX - mouseX;
-        const deltaY = event.clientY - mouseY;
-        
-        phi -= deltaX * 0.01;
-        theta = Math.max(-Math.PI/2, Math.min(Math.PI/2, theta + deltaY * 0.01));
-        
-        updatePanoramicCamera();
-        
-        mouseX = event.clientX;
-        mouseY = event.clientY;
-    }
-
-    function onPanoramicMouseUp() {
-        isMouseDown = false;
-    }
-
-    function onPanoramicWheel(event) {
-        const fov = panoramicCamera.fov + event.deltaY * 0.05;
-        panoramicCamera.fov = Math.max(10, Math.min(120, fov));
-        panoramicCamera.updateProjectionMatrix();
-    }
-
-    // Touch controls
-    let touchStartX = 0, touchStartY = 0;
-
-    function onPanoramicTouchStart(event) {
-        if (event.touches.length === 1) {
-            touchStartX = event.touches[0].clientX;
-            touchStartY = event.touches[0].clientY;
-        }
-    }
-
-    function onPanoramicTouchMove(event) {
-        if (event.touches.length === 1) {
-            const deltaX = event.touches[0].clientX - touchStartX;
-            const deltaY = event.touches[0].clientY - touchStartY;
-            
-            phi -= deltaX * 0.01;
-            theta = Math.max(-Math.PI/2, Math.min(Math.PI/2, theta + deltaY * 0.01));
-            
-            updatePanoramicCamera();
-            
-            touchStartX = event.touches[0].clientX;
-            touchStartY = event.touches[0].clientY;
-        }
-        event.preventDefault();
-    }
-
-    function onPanoramicTouchEnd() {
-        // Touch ended
-    }
-
-    function updatePanoramicCamera() {
-        const x = radius * Math.sin(phi) * Math.cos(theta);
-        const y = radius * Math.sin(theta);
-        const z = radius * Math.cos(phi) * Math.cos(theta);
-        
-        panoramicCamera.position.set(x, y, z);
-        panoramicCamera.lookAt(0, 0, 0);
-    }
-
+    // Remove old mouse control functions
     function onPanoramicResize() {
         if (panoramicCamera && panoramicRenderer) {
             panoramicCamera.aspect = window.innerWidth / window.innerHeight;
@@ -440,6 +363,9 @@ document.addEventListener('DOMContentLoaded', function() {
     function animate() {
         if (!panoramicViewer.classList.contains('hidden')) {
             requestAnimationFrame(animate);
+            if (panoramicControls && panoramicControls.enableDamping) {
+                panoramicControls.update();
+            }
             panoramicRenderer.render(panoramicScene, panoramicCamera);
         }
     }
