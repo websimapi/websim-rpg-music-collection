@@ -112,6 +112,7 @@ document.addEventListener('DOMContentLoaded', function() {
     let isMouseDown = false;
     let mouseX = 0, mouseY = 0;
     let phi = 0, theta = 0;
+    let radius = 500;
 
     // Create the world map with pins
     function createWorldMap() {
@@ -293,16 +294,21 @@ document.addEventListener('DOMContentLoaded', function() {
     // Initialize panoramic viewer
     function initPanoramicViewer() {
         panoramicScene = new THREE.Scene();
-        panoramicCamera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        panoramicCamera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 1, 1100);
         panoramicRenderer = new THREE.WebGLRenderer();
         panoramicRenderer.setSize(window.innerWidth, window.innerHeight);
         
         // Create sphere geometry for panoramic image
-        panoramicGeometry = new THREE.SphereGeometry(500, 60, 40);
+        panoramicGeometry = new THREE.SphereGeometry(radius, 60, 40);
         // Flip the geometry inside out
         panoramicGeometry.scale(-1, 1, 1);
         
         panoramicContainer.appendChild(panoramicRenderer.domElement);
+        
+        // Set initial camera position
+        phi = 0;
+        theta = 0;
+        updatePanoramicCamera();
         
         // Mouse controls
         panoramicContainer.addEventListener('mousedown', onPanoramicMouseDown);
@@ -365,8 +371,8 @@ document.addEventListener('DOMContentLoaded', function() {
         const deltaX = event.clientX - mouseX;
         const deltaY = event.clientY - mouseY;
         
-        phi += deltaX * 0.01;
-        theta = Math.max(-Math.PI/2 + 0.1, Math.min(Math.PI/2 - 0.1, theta + deltaY * 0.01));
+        phi -= deltaX * 0.01;
+        theta = Math.max(-Math.PI/2, Math.min(Math.PI/2, theta + deltaY * 0.01));
         
         updatePanoramicCamera();
         
@@ -399,8 +405,8 @@ document.addEventListener('DOMContentLoaded', function() {
             const deltaX = event.touches[0].clientX - touchStartX;
             const deltaY = event.touches[0].clientY - touchStartY;
             
-            phi += deltaX * 0.01;
-            theta = Math.max(-Math.PI/2 + 0.1, Math.min(Math.PI/2 - 0.1, theta + deltaY * 0.01));
+            phi -= deltaX * 0.01;
+            theta = Math.max(-Math.PI/2, Math.min(Math.PI/2, theta + deltaY * 0.01));
             
             updatePanoramicCamera();
             
@@ -415,11 +421,12 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function updatePanoramicCamera() {
-        const x = Math.sin(phi) * Math.cos(theta);
-        const y = Math.sin(theta);
-        const z = Math.cos(phi) * Math.cos(theta);
+        const x = radius * Math.sin(phi) * Math.cos(theta);
+        const y = radius * Math.sin(theta);
+        const z = radius * Math.cos(phi) * Math.cos(theta);
         
-        panoramicCamera.lookAt(x, y, z);
+        panoramicCamera.position.set(x, y, z);
+        panoramicCamera.lookAt(0, 0, 0);
     }
 
     function onPanoramicResize() {
