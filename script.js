@@ -120,7 +120,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 pin.className = 'map-pin';
                 pin.dataset.locationId = location.id;
                 pin.style.left = `${location.mapPosition.x}%`;
-                pin.style.top = `${location.mapPosition.y}%';
+                pin.style.top = `${location.mapPosition.y}%`;
 
                 const pinLabel = document.createElement('div');
                 pinLabel.className = 'map-pin-label';
