@@ -3,27 +3,37 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RPG Music Collection</title>
+    <title>RPG Scene Explorer</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <div class="container">
-        <h1>RPG Music Collection</h1>
-        <div class="music-player">
-            <div class="track-info">
-                <h2 id="track-title">Select a track</h2>
-                <p id="track-description">Choose a track from the list below</p>
+    <div class="main-container">
+        <header>
+            <h1>RPG World Explorer</h1>
+            <p class="subtitle">Click on a location to explore and hear its theme music</p>
+        </header>
+        
+        <div id="scene-container">
+            <div id="world-map">
+                <!-- Map will be displayed here -->
             </div>
-            
-            <div class="player-controls">
-                <audio id="audio-player" controls></audio>
+            <div id="scene-viewer">
+                <div id="scene-image"></div>
+                <div id="scene-overlay">
+                    <h2 id="scene-title">Select a location</h2>
+                    <p id="scene-description">Click on a location on the map to explore</p>
+                    <div class="audio-controls">
+                        <audio id="scene-audio" controls></audio>
+                        <button id="toggle-audio">▶️ Play Music</button>
+                    </div>
+                </div>
             </div>
-            
-            <div class="track-list">
-                <h3>Available Tracks</h3>
-                <ul id="tracks">
-                    <!-- Tracks will be loaded here by JavaScript -->
-                </ul>
+        </div>
+        
+        <div id="location-selector">
+            <h3>Available Locations</h3>
+            <div id="location-grid">
+                <!-- Location cards will be loaded here by JavaScript -->
             </div>
         </div>
     </div>
