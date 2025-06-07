@@ -310,7 +310,7 @@ audio {
     height: 100%;
     background-color: #f0a500;
     transform: translateX(-100%);
-    animation: travelProgress 2s ease-in-out;
+    animation: travelProgress 4s ease-in-out;
 }
 
 .travel-dot {
@@ -321,7 +321,7 @@ audio {
     border-radius: 50%;
     transform: translate(-50%, -50%);
     opacity: 0;
-    animation: dotAppear 0.8s ease forwards;
+    animation: dotAppear 1.2s ease forwards;
     box-shadow: 0 0 3px rgba(255, 68, 68, 0.8);
 }
 

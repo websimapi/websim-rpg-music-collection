@@ -200,13 +200,13 @@ document.addEventListener('DOMContentLoaded', function() {
         // Create travel path
         createTravelPath(fromLocation, toLocation);
         
-        // Fade out current music and wait for it to complete before starting new music
+        // Start fading out current music immediately
         let fadeOutComplete = Promise.resolve();
         if (audioEnabled && sceneAudio.src && !sceneAudio.paused) {
-            fadeOutComplete = fadeOutAudio(sceneAudio, 3000);
+            fadeOutComplete = fadeOutAudio(sceneAudio, 2000); // 2 second fade out
         }
         
-        // Animate travel (2 seconds)
+        // Animate travel (4 seconds total)
         setTimeout(() => {
             // Remove path
             document.querySelectorAll('.travel-path').forEach(path => path.remove());
@@ -218,13 +218,14 @@ document.addEventListener('DOMContentLoaded', function() {
             fadeOutComplete.then(() => {
                 if (audioEnabled && sceneAudio.src) {
                     sceneAudio.volume = 0;
-                    sceneAudio.play().catch(e => console.log('Audio play failed:', e));
-                    fadeInAudio(sceneAudio, 3000);
+                    sceneAudio.play().then(() => {
+                        fadeInAudio(sceneAudio, 2000); // 2 second fade in
+                    }).catch(e => console.log('Audio play failed:', e));
                 }
             });
             
             isTraveling = false;
-        }, 2000);
+        }, 4000); // Increased from 2000 to 4000
     }
     
     // Create visual travel path
@@ -247,7 +248,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const endY = toLocation.mapPosition.y;
         
         // Create dotted sine wave path
-        const numDots = 40;
+        const numDots = 20; // Reduced from 40
         const amplitude = 3; // Wave height in percentage
         for (let i = 0; i <= numDots; i++) {
             const progress = i / numDots;
@@ -267,7 +268,7 @@ document.addEventListener('DOMContentLoaded', function() {
             dot.className = 'travel-dot';
             dot.style.left = `${x}%`;
             dot.style.top = `${y}%`;
-            dot.style.animationDelay = `${i * 0.05}s`;
+            dot.style.animationDelay = `${i * 0.15}s`; // Increased from 0.05s to 0.15s
             
             pathContainer.appendChild(dot);
         }
