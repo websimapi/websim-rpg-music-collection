@@ -467,4 +467,109 @@ document.addEventListener('DOMContentLoaded', function() {
             updateScene(locations[0]);
         }, 1000);
     }
+
+    // Audio fade functions
+    function fadeOutAudio(audio, duration) {
+        return new Promise((resolve) => {
+            if (!audio || audio.paused) {
+                resolve();
+                return;
+            }
+            
+            const startVolume = audio.volume;
+            const fadeStep = startVolume / (duration / 50);
+            
+            const fadeInterval = setInterval(() => {
+                if (audio.volume > fadeStep) {
+                    audio.volume -= fadeStep;
+                } else {
+                    audio.volume = 0;
+                    audio.pause();
+                    clearInterval(fadeInterval);
+                    resolve();
+                }
+            }, 50);
+        });
+    }
+
+    function fadeInAudio(audio, duration) {
+        return new Promise((resolve) => {
+            if (!audio) {
+                resolve();
+                return;
+            }
+            
+            const targetVolume = 0.7;
+            const fadeStep = targetVolume / (duration / 50);
+            audio.volume = 0;
+            
+            const fadeInterval = setInterval(() => {
+                if (audio.volume < targetVolume - fadeStep) {
+                    audio.volume += fadeStep;
+                } else {
+                    audio.volume = targetVolume;
+                    clearInterval(fadeInterval);
+                    resolve();
+                }
+            }, 50);
+        });
+    }
+
+    // Update scene function
+    function updateScene(location) {
+        currentLocation = location;
+        
+        // Update scene display
+        sceneImage.style.backgroundImage = `url(${location.image})`;
+        sceneTitle.textContent = location.name;
+        sceneDescription.textContent = location.description;
+        
+        // Show panoramic button
+        panoramicBtn.style.display = 'block';
+        
+        // Update active states
+        document.querySelectorAll('.location-card').forEach(card => {
+            card.classList.remove('active');
+            if (card.dataset.locationId === location.id) {
+                card.classList.add('active');
+            }
+        });
+        
+        document.querySelectorAll('.map-pin').forEach(pin => {
+            pin.classList.remove('active');
+            if (pin.dataset.locationId === location.id) {
+                pin.classList.add('active');
+            }
+        });
+        
+        // Update music
+        if (location.music && audioEnabled) {
+            sceneAudio.src = location.music;
+            sceneAudio.volume = 0.7;
+            sceneAudio.play().catch(e => console.log('Audio play failed:', e));
+        }
+    }
+
+    // Enable audio function
+    function enableAudio() {
+        if (!hasUserInteracted) {
+            hasUserInteracted = true;
+            audioEnabled = true;
+            globalAudioToggle.classList.remove('hidden');
+            globalAudioToggle.textContent = '🔊';
+        }
+    }
+
+    // Global audio toggle
+    globalAudioToggle.addEventListener('click', function() {
+        audioEnabled = !audioEnabled;
+        globalAudioToggle.textContent = audioEnabled ? '🔊' : '🔇';
+        
+        if (!audioEnabled && currentAudio) {
+            currentAudio.pause();
+        } else if (audioEnabled && currentLocation) {
+            sceneAudio.src = currentLocation.music;
+            sceneAudio.play().catch(e => console.log('Audio play failed:', e));
+        }
+    });
 });
