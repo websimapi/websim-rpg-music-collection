@@ -200,12 +200,13 @@ document.addEventListener('DOMContentLoaded', function() {
         // Create travel path
         createTravelPath(fromLocation, toLocation);
         
-        // Fade out current music (slower fade)
-        if (audioEnabled && sceneAudio.src) {
-            fadeOutAudio(sceneAudio, 3000);
+        // Fade out current music and wait for it to complete before starting new music
+        let fadeOutComplete = Promise.resolve();
+        if (audioEnabled && sceneAudio.src && !sceneAudio.paused) {
+            fadeOutComplete = fadeOutAudio(sceneAudio, 3000);
         }
         
-        // Animate travel (2 seconds) - removed overlay
+        // Animate travel (2 seconds)
         setTimeout(() => {
             // Remove path
             document.querySelectorAll('.travel-path').forEach(path => path.remove());
@@ -213,14 +214,14 @@ document.addEventListener('DOMContentLoaded', function() {
             // Update scene
             updateScene(toLocation);
             
-            // Fade in new music after a short delay (slower fade)
-            setTimeout(() => {
+            // Wait for fade out to complete, then fade in new music
+            fadeOutComplete.then(() => {
                 if (audioEnabled && sceneAudio.src) {
                     sceneAudio.volume = 0;
                     sceneAudio.play().catch(e => console.log('Audio play failed:', e));
                     fadeInAudio(sceneAudio, 3000);
                 }
-            }, 500);
+            });
             
             isTraveling = false;
         }, 2000);
@@ -298,18 +299,21 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Audio fade functions
     function fadeOutAudio(audio, duration) {
-        const startVolume = audio.volume;
-        const step = startVolume / (duration / 50);
-        
-        const fadeOut = setInterval(() => {
-            if (audio.volume > 0.05) {
-                audio.volume = Math.max(0, audio.volume - step);
-            } else {
-                audio.volume = 0;
-                audio.pause();
-                clearInterval(fadeOut);
-            }
-        }, 50);
+        return new Promise((resolve) => {
+            const startVolume = audio.volume;
+            const step = startVolume / (duration / 50);
+            
+            const fadeOut = setInterval(() => {
+                if (audio.volume > 0.05) {
+                    audio.volume = Math.max(0, audio.volume - step);
+                } else {
+                    audio.volume = 0;
+                    audio.pause();
+                    clearInterval(fadeOut);
+                    resolve();
+                }
+            }, 50);
+        });
     }
     
     function fadeInAudio(audio, duration) {
