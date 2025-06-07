@@ -11,6 +11,7 @@
         <header>
             <h1>RPG World Explorer</h1>
             <p class="subtitle">Click on a location to explore and hear its theme music</p>
+            <button id="global-audio-toggle" class="hidden">🔊</button>
         </header>
         
         <div id="scene-container">
@@ -23,8 +24,7 @@
                     <h2 id="scene-title">Select a location</h2>
                     <p id="scene-description">Click on a location on the map to explore</p>
                     <div class="audio-controls">
-                        <audio id="scene-audio" controls></audio>
-                        <button id="toggle-audio">▶️ Play Music</button>
+                        <audio id="scene-audio" loop></audio>
                     </div>
                 </div>
             </div>

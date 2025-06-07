@@ -89,11 +89,13 @@ document.addEventListener('DOMContentLoaded', function() {
     const sceneTitle = document.getElementById('scene-title');
     const sceneDescription = document.getElementById('scene-description');
     const sceneAudio = document.getElementById('scene-audio');
-    const toggleAudio = document.getElementById('toggle-audio');
+    const globalAudioToggle = document.getElementById('global-audio-toggle');
     const locationGrid = document.getElementById('location-grid');
 
     let currentAudio = null;
     let isPlaying = false;
+    let audioEnabled = false;
+    let hasUserInteracted = false;
 
     // Create the world map with pins
     function createWorldMap() {
@@ -174,6 +176,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Change scene function
     function changeScene(location) {
+        // Enable audio on first interaction
+        enableAudio();
+        
         // Update active location highlights
         document.querySelectorAll('.location-card').forEach(card => card.classList.remove('active'));
         document.querySelector(`.location-card[data-location-id="${location.id}"]`).classList.add('active');
@@ -186,24 +191,42 @@ document.addEventListener('DOMContentLoaded', function() {
         sceneTitle.textContent = location.name;
         sceneDescription.textContent = location.description;
 
-        // Update audio
+        // Update and auto-play audio if enabled
         sceneAudio.src = location.music;
         sceneAudio.load();
-        isPlaying = false;
-        toggleAudio.textContent = '▶️ Play Music';
         currentAudio = location.music;
+        
+        if (audioEnabled && hasUserInteracted) {
+            sceneAudio.play().catch(e => console.log('Audio play failed:', e));
+        }
+    }
+
+    // Enable audio after first user interaction
+    function enableAudio() {
+        if (!hasUserInteracted) {
+            hasUserInteracted = true;
+            audioEnabled = true;
+            globalAudioToggle.classList.remove('hidden');
+            // Auto-play current scene music if available
+            if (sceneAudio.src) {
+                sceneAudio.play().catch(e => console.log('Audio play failed:', e));
+            }
+        }
     }
 
     // Toggle audio playback
-    toggleAudio.addEventListener('click', function() {
-        if (isPlaying) {
+    globalAudioToggle.addEventListener('click', function() {
+        if (audioEnabled) {
             sceneAudio.pause();
-            toggleAudio.textContent = '▶️ Play Music';
+            audioEnabled = false;
+            globalAudioToggle.textContent = '🔇';
         } else {
-            sceneAudio.play();
-            toggleAudio.textContent = '⏸️ Pause Music';
+            audioEnabled = true;
+            globalAudioToggle.textContent = '🔊';
+            if (sceneAudio.src) {
+                sceneAudio.play().catch(e => console.log('Audio play failed:', e));
+            }
         }
-        isPlaying = !isPlaying;
     });
 
     // Initialize scene explorer
