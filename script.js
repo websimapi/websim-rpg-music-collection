@@ -460,7 +460,7 @@ document.addEventListener('DOMContentLoaded', function() {
         sceneDescription.textContent = location.description;
         
         // Show panoramic button
-        panoramicBtn.style.display = 'block';
+        panoramicBtn.style.display = 'flex';
         
         // Update active states
         document.querySelectorAll('.location-card').forEach(card => {

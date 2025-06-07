@@ -40,9 +40,29 @@ h1 {
     margin-bottom: 2rem;
 }
 
+#scene-info {
+    background-color: rgba(26, 26, 46, 0.8);
+    border-radius: 10px;
+    padding: 1.5rem;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+    border: 1px solid #333;
+    text-align: center;
+}
+
+#scene-info h2 {
+    color: #f0a500;
+    margin-bottom: 0.5rem;
+    margin-top: 0;
+}
+
+#scene-info p {
+    color: #ddd;
+    margin-bottom: 1rem;
+}
+
 @media (min-width: 768px) {
     #scene-container {
-        flex-direction: row;
+        flex-direction: column;
     }
     
     #world-map {
@@ -88,16 +108,7 @@ h1 {
 }
 
 #scene-overlay {
-    position: relative;
-    z-index: 2;
-    background-color: rgba(0, 0, 0, 0.5);
-    padding: 1.5rem;
-    backdrop-filter: blur(5px);
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
-    min-height: 150px;
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-end;
+    display: none;
 }
 
 #scene-title {
@@ -111,6 +122,10 @@ h1 {
 }
 
 .audio-controls {
+    position: absolute;
+    bottom: 1rem;
+    left: 1rem;
+    right: 1rem;
     display: flex;
     flex-direction: column;
     gap: 10px;
@@ -355,24 +370,45 @@ audio {
     margin-bottom: 1rem;
     display: flex;
     gap: 10px;
+    justify-content: center;
 }
 
 .panoramic-button {
     background: linear-gradient(45deg, #4a90e2, #357abd);
     color: white;
     border: none;
-    padding: 8px 16px;
-    border-radius: 20px;
+    padding: 8px 12px;
+    border-radius: 50%;
     cursor: pointer;
-    font-size: 0.9rem;
+    font-size: 1.2rem;
     transition: all 0.3s ease;
     box-shadow: 0 2px 8px rgba(74, 144, 226, 0.3);
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .panoramic-button:hover {
-    transform: translateY(-2px);
+    transform: translateY(-2px) scale(1.1);
     box-shadow: 0 4px 12px rgba(74, 144, 226, 0.5);
     background: linear-gradient(45deg, #357abd, #2c5f94);
+}
+
+.panoramic-button:hover::after {
+    content: "View in Panoramic";
+    position: absolute;
+    top: -35px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    white-space: nowrap;
+    z-index: 1000;
 }
 
 .panoramic-viewer {

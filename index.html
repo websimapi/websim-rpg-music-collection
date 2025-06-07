@@ -15,20 +15,20 @@
         </header>
         
         <div id="scene-container">
+            <div id="scene-info">
+                <h2 id="scene-title">Select a location</h2>
+                <p id="scene-description">Click on a location on the map to explore</p>
+                <div class="scene-controls">
+                    <button id="panoramic-btn" class="panoramic-button" style="display: none;" title="View in Panoramic">🌐</button>
+                </div>
+            </div>
             <div id="world-map">
                 <!-- Map will be displayed here -->
             </div>
             <div id="scene-viewer">
                 <div id="scene-image"></div>
-                <div id="scene-overlay">
-                    <h2 id="scene-title">Select a location</h2>
-                    <p id="scene-description">Click on a location on the map to explore</p>
-                    <div class="scene-controls">
-                        <button id="panoramic-btn" class="panoramic-button" style="display: none;">🌐 View in Panoramic</button>
-                    </div>
-                    <div class="audio-controls">
-                        <audio id="scene-audio" loop></audio>
-                    </div>
+                <div class="audio-controls">
+                    <audio id="scene-audio" loop></audio>
                 </div>
             </div>
         </div>
