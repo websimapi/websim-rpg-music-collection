@@ -96,6 +96,8 @@ document.addEventListener('DOMContentLoaded', function() {
     let isPlaying = false;
     let audioEnabled = false;
     let hasUserInteracted = false;
+    let isTraveling = false;
+    let currentLocation = null;
 
     // Create the world map with pins
     function createWorldMap() {
@@ -176,8 +178,107 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Change scene function
     function changeScene(location) {
+        // Prevent multiple simultaneous travels
+        if (isTraveling) return;
+        
         // Enable audio on first interaction
         enableAudio();
+        
+        // If we have a current location and it's different, animate travel
+        if (currentLocation && currentLocation.id !== location.id) {
+            animateTravel(currentLocation, location);
+        } else {
+            // Direct scene change for first load or same location
+            updateScene(location);
+        }
+    }
+
+    // Animate travel between locations
+    function animateTravel(fromLocation, toLocation) {
+        isTraveling = true;
+        
+        // Create travel path
+        createTravelPath(fromLocation, toLocation);
+        
+        // Fade out current music
+        if (audioEnabled && sceneAudio.src) {
+            fadeOutAudio(sceneAudio, 1000);
+        }
+        
+        // Add traveling overlay
+        const overlay = document.createElement('div');
+        overlay.className = 'travel-overlay';
+        overlay.innerHTML = `
+            <div class="travel-text">
+                <h3>Traveling to ${toLocation.name}...</h3>
+                <div class="travel-progress"></div>
+            </div>
+        `;
+        document.body.appendChild(overlay);
+        
+        // Animate travel (2 seconds)
+        setTimeout(() => {
+            // Remove overlay and path
+            overlay.remove();
+            document.querySelectorAll('.travel-path').forEach(path => path.remove());
+            
+            // Update scene
+            updateScene(toLocation);
+            
+            // Fade in new music after a short delay
+            setTimeout(() => {
+                if (audioEnabled && sceneAudio.src) {
+                    sceneAudio.volume = 0;
+                    sceneAudio.play().catch(e => console.log('Audio play failed:', e));
+                    fadeInAudio(sceneAudio, 1000);
+                }
+            }, 500);
+            
+            isTraveling = false;
+        }, 2000);
+    }
+    
+    // Create visual travel path
+    function createTravelPath(fromLocation, toLocation) {
+        const mapContainer = worldMap.querySelector('div');
+        if (!mapContainer) return;
+        
+        const pathContainer = document.createElement('div');
+        pathContainer.className = 'travel-path';
+        pathContainer.style.position = 'absolute';
+        pathContainer.style.top = '0';
+        pathContainer.style.left = '0';
+        pathContainer.style.width = '100%';
+        pathContainer.style.height = '100%';
+        pathContainer.style.pointerEvents = 'none';
+        
+        const startX = fromLocation.mapPosition.x;
+        const startY = fromLocation.mapPosition.y;
+        const endX = toLocation.mapPosition.x;
+        const endY = toLocation.mapPosition.y;
+        
+        // Create dotted line path
+        const numDots = 20;
+        for (let i = 0; i <= numDots; i++) {
+            const progress = i / numDots;
+            const x = startX + (endX - startX) * progress;
+            const y = startY + (endY - startY) * progress;
+            
+            const dot = document.createElement('div');
+            dot.className = 'travel-dot';
+            dot.style.left = `${x}%`;
+            dot.style.top = `${y}%`;
+            dot.style.animationDelay = `${i * 0.1}s`;
+            
+            pathContainer.appendChild(dot);
+        }
+        
+        mapContainer.appendChild(pathContainer);
+    }
+    
+    // Extract scene update logic
+    function updateScene(location) {
+        currentLocation = location;
         
         // Update active location highlights
         document.querySelectorAll('.location-card').forEach(card => card.classList.remove('active'));
@@ -191,16 +292,43 @@ document.addEventListener('DOMContentLoaded', function() {
         sceneTitle.textContent = location.name;
         sceneDescription.textContent = location.description;
 
-        // Update and auto-play audio if enabled
+        // Update audio source
         sceneAudio.src = location.music;
         sceneAudio.load();
         currentAudio = location.music;
-        
-        if (audioEnabled && hasUserInteracted) {
-            sceneAudio.play().catch(e => console.log('Audio play failed:', e));
-        }
     }
-
+    
+    // Audio fade functions
+    function fadeOutAudio(audio, duration) {
+        const startVolume = audio.volume;
+        const step = startVolume / (duration / 50);
+        
+        const fadeOut = setInterval(() => {
+            if (audio.volume > 0.05) {
+                audio.volume = Math.max(0, audio.volume - step);
+            } else {
+                audio.volume = 0;
+                audio.pause();
+                clearInterval(fadeOut);
+            }
+        }, 50);
+    }
+    
+    function fadeInAudio(audio, duration) {
+        audio.volume = 0;
+        const targetVolume = 1;
+        const step = targetVolume / (duration / 50);
+        
+        const fadeIn = setInterval(() => {
+            if (audio.volume < targetVolume - 0.05) {
+                audio.volume = Math.min(targetVolume, audio.volume + step);
+            } else {
+                audio.volume = targetVolume;
+                clearInterval(fadeIn);
+            }
+        }, 50);
+    }
+    
     // Enable audio after first user interaction
     function enableAudio() {
         if (!hasUserInteracted) {
@@ -236,7 +364,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Set initial scene (first location)
     if (locations.length > 0) {
         setTimeout(() => {
-            changeScene(locations[0]);
+            updateScene(locations[0]);
         }, 1000);
     }
 });
