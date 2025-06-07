@@ -200,37 +200,25 @@ document.addEventListener('DOMContentLoaded', function() {
         // Create travel path
         createTravelPath(fromLocation, toLocation);
         
-        // Fade out current music
+        // Fade out current music (slower fade)
         if (audioEnabled && sceneAudio.src) {
-            fadeOutAudio(sceneAudio, 1000);
+            fadeOutAudio(sceneAudio, 3000);
         }
         
-        // Add traveling overlay
-        const overlay = document.createElement('div');
-        overlay.className = 'travel-overlay';
-        overlay.innerHTML = `
-            <div class="travel-text">
-                <h3>Traveling to ${toLocation.name}...</h3>
-                <div class="travel-progress"></div>
-            </div>
-        `;
-        document.body.appendChild(overlay);
-        
-        // Animate travel (2 seconds)
+        // Animate travel (2 seconds) - removed overlay
         setTimeout(() => {
-            // Remove overlay and path
-            overlay.remove();
+            // Remove path
             document.querySelectorAll('.travel-path').forEach(path => path.remove());
             
             // Update scene
             updateScene(toLocation);
             
-            // Fade in new music after a short delay
+            // Fade in new music after a short delay (slower fade)
             setTimeout(() => {
                 if (audioEnabled && sceneAudio.src) {
                     sceneAudio.volume = 0;
                     sceneAudio.play().catch(e => console.log('Audio play failed:', e));
-                    fadeInAudio(sceneAudio, 1000);
+                    fadeInAudio(sceneAudio, 3000);
                 }
             }, 500);
             
@@ -257,18 +245,28 @@ document.addEventListener('DOMContentLoaded', function() {
         const endX = toLocation.mapPosition.x;
         const endY = toLocation.mapPosition.y;
         
-        // Create dotted line path
-        const numDots = 20;
+        // Create dotted sine wave path
+        const numDots = 40;
+        const amplitude = 3; // Wave height in percentage
         for (let i = 0; i <= numDots; i++) {
             const progress = i / numDots;
-            const x = startX + (endX - startX) * progress;
-            const y = startY + (endY - startY) * progress;
+            const baseX = startX + (endX - startX) * progress;
+            const baseY = startY + (endY - startY) * progress;
+            
+            // Add sine wave offset perpendicular to the path
+            const waveOffset = Math.sin(progress * Math.PI * 3) * amplitude;
+            const angle = Math.atan2(endY - startY, endX - startX);
+            const offsetX = -Math.sin(angle) * waveOffset;
+            const offsetY = Math.cos(angle) * waveOffset;
+            
+            const x = baseX + offsetX;
+            const y = baseY + offsetY;
             
             const dot = document.createElement('div');
             dot.className = 'travel-dot';
             dot.style.left = `${x}%`;
             dot.style.top = `${y}%`;
-            dot.style.animationDelay = `${i * 0.1}s`;
+            dot.style.animationDelay = `${i * 0.05}s`;
             
             pathContainer.appendChild(dot);
         }
